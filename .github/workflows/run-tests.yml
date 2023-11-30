@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [ "master" ]
+
+  workflow_dispatch:
+
+env:
+  SBCL_VERSION: 2.3.11
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: "Cache: SBCL"
+        id: cache-sbcl
+        uses: actions/cache@v3.3.2
+        with:
+          path: "~/sbcl"
+          key: "${SBCL_VERSION}"
+
+      - name: "Cache: .sbclrc"
+        uses: actions/cache@v3.3.2
+        with:
+          path: "~/.sbclrc"
+          key: "${SBCL_VERSION}"
+
+      - name: "Cache: Quicklisp"
+        uses: actions/cache@v3.3.2
+        with:
+          path: "~/quicklisp"
+          key: always-restore
+
+      - name: "Cache: asdf config"
+        uses: actions/cache@v3.3.2
+        with:
+          path: "~/.config/common-lisp"
+          key: always-restore
+
+      - name: "Cache: asdf cache"
+        uses: actions/cache@v3.3.2
+        with:
+          path: "~/.cache/common-lisp"
+          key: always-restore
+
+      - name: "Install SBCL"
+        uses: cheeze2000/setup-sbcl@v1
+        with:
+          version: $SBCL_VERSION
+        if: steps.cache-sbcl.outputs.cache-hit != 'true'
+
+      - name: "Add SBCL to PATH"
+        run: echo "/home/runner/sbcl/bin" >> $GITHUB_PATH
+        if: steps.cache-sbcl.outputs.cache-hit == 'true'
+
+      - name: "Test"
+        run: |
+          sbcl --non-interactive \
+               --eval '(ql:quickload (list :aoc :aoc-test))' \
+               --eval '(unless (asdf:test-system :aoc) (uiop:quit 1))'
