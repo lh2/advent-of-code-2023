@@ -57,7 +57,7 @@
         thereis (reverse-alpha-digit-at line i)))
 
 (defun day-1 (input)
-  (loop for line in (read-input input)
+  (loop for line = (read-line input nil)
         while line
         sum (+ (* (or (first-digit line) 0) 10)
                (or (last-digit line) 0)) into task-1
