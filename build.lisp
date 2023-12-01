@@ -7,6 +7,10 @@ exec sbcl --script "build.lisp"
   (when (probe-file quicklisp-init)
     (load quicklisp-init)))
 (push (probe-file #P".") asdf:*central-registry*)
+
+(sb-ext:restrict-compiler-policy 'speed 3 3)
+(push :release *features*)
+
 (ql:quickload :aoc)
 (loop for day from 1 to 25
       do (handler-case

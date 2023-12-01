@@ -66,6 +66,8 @@
                     groups)))
 
 
+(declaim (ftype (function (character) fixnum) char-number)
+         (inline char-number))
 (defun char-number (char)
   (- (char-int char) 48))
 
