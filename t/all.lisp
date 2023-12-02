@@ -11,16 +11,14 @@
   (run-tests :package (format nil "AOC-TEST/DAY-~A" day)
              :run-contexts 'with-summary-context))
 
-;; TODO: the asdf:load-system might not be so great here
+;; TODO: the recursive asdf/ql stuff might not be so great here
 (defun test-all ()
   (run-tests :tests (nconc
                      (get-tests :package '#:aoc-test/utils)
                      (loop for day from 1 to 25
-                           for system = (format nil "aoc-test/day-~A" day)
-                           nconc (handler-case
-                                     (progn
-                                       (asdf:load-system system)
-                                       (get-tests :package (string-upcase system)))
-                                   (asdf:missing-component (c)
-                                     (declare (ignore c))))))
+                           for system-name = (format nil "aoc-test/day-~A" day)
+                           for system = (asdf:find-system system-name nil)
+                           when system
+                             do (ql:quickload system-name)
+                             and nconc (get-tests :package (string-upcase system-name))))
              :run-contexts 'with-summary-context))

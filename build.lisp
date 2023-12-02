@@ -13,10 +13,10 @@ exec sbcl --script "build.lisp"
 
 (ql:quickload :aoc)
 (loop for day from 1 to 25
-      do (handler-case
-             (asdf:load-system (format nil "aoc/day-~A" day))
-           (asdf:missing-component (c)
-             (declare (ignore c)))))
+      for system-name = (format nil "aoc/day-~A" day)
+      for system = (asdf:find-system system-name nil)
+      when system
+        do (ql:quickload system-name))
 (sb-ext:save-lisp-and-die "aoc"
                           :toplevel #'aoc:main
                           :executable t)
