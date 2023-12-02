@@ -3,6 +3,7 @@
   (:export #:day-2))
 (in-package #:aoc/day-2)
 
+(declaim (ftype (function (simple-string fixnum) list) parse-sets))
 (defun parse-sets (line start)
   (loop with sets = nil
         with red = 0
@@ -27,6 +28,7 @@
           and do (setf red 0 green 0 blue 0)
         finally (return (cons (list red green blue) sets))))
 
+(declaim (ftype (function (simple-string) list) parse-game-line))
 (defun parse-game-line (line)
   (let* ((start-game-id 5)
          (end-game-id (position #\: line)))
@@ -37,10 +39,11 @@
 
 (defun game-possible-p (sets)
   (loop for set in sets
-        always (loop for color-1 in set
-                     for color-2 in *minimum-cubes*
+        always (loop for color-1 fixnum in set
+                     for color-2 fixnum in *minimum-cubes*
                      always (<= color-1 color-2))))
 
+(declaim (ftype (function (list) fixnum) game-power))
 (defun game-power (sets)
   (apply #'*
          (apply #'mapcar
@@ -51,8 +54,8 @@
 (defun day-2 (input)
   (loop for line = (read-line input nil)
         while line
-        for (game sets) = (parse-game-line line)
+        for (game sets) (fixnum list) = (parse-game-line line)
         when (game-possible-p sets)
-          sum game into task-1
-        sum (game-power sets) into task-2
+          sum game into task-1 fixnum
+        sum (game-power sets) into task-2 fixnum
         finally (return (values task-1 task-2))))
