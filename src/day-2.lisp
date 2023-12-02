@@ -44,11 +44,7 @@
 
 (declaim (ftype (function (list) fixnum) game-power))
 (defun game-power (sets)
-  (apply #'*
-         (apply #'mapcar
-                (cons (lambda (&rest values)
-                        (apply #'max values))
-                      sets))))
+  (apply #'* (apply (curry #'mapcar #'max) sets)))
 
 (defun day-2 (input)
   (loop for line = (read-line input nil)
