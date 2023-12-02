@@ -3,18 +3,30 @@
   (:export #:day-2))
 (in-package #:aoc/day-2)
 
+(defun parse-sets (line start)
+  (loop with sets = nil
+        with current-set = nil
+        for pos from start below (length line)
+        do (multiple-value-bind (n end)
+               (parse-integer line :start pos :junk-allowed t)
+             (setf pos end)
+             (setf end (position-if (lambda (char)
+                                      (or (char= #\, char)
+                                          (char= #\; char)))
+                                    line
+                                    :start pos))
+             (setf (getf current-set (make-keyword (upcase (subseq line (1+ pos) end)))) n
+                   pos (or end (1- (length line)))))
+        when (char= (aref line pos) #\;)
+          do (push current-set sets)
+          and do (setf current-set nil)
+        finally (return (cons current-set sets))))
+
 (defun parse-game-line (line)
-  (let* ((game-cubes (str:split ": " line))
-         (game (parse-integer (subseq (first game-cubes) 5)))
-         (sets (mapcar (lambda (set)
-                         (let ((cubes (str:split ", " set)))
-                           (mapcan (lambda (cube-color)
-                                     (let ((cube-color (str:split " " cube-color)))
-                                       (list (make-keyword (string-upcase (second cube-color)))
-                                             (parse-integer (first cube-color)))))
-                                   cubes)))
-                       (str:split "; " (second game-cubes)))))
-    (list game sets)))
+  (let* ((start-game-id 5)
+         (end-game-id (position #\: line)))
+    (list (parse-integer line :start start-game-id :end end-game-id)
+          (parse-sets line (1+ end-game-id)))))
 
 (defun game-possible-p (sets)
   (loop for set in sets
