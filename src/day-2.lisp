@@ -28,10 +28,17 @@
                     (or (null blue)
                         (<= blue 14)))))
 
+(defun game-power (sets)
+  (apply #'*
+         (mapcar (lambda (color)
+                   (apply #'max (cons 0 (remove nil (mapcar (rcurry #'getf color) sets)))))
+                 (list :red :green :blue))))
+
 (defun day-2 (input)
   (loop for line = (read-line input nil)
         while line
         for (game sets) = (parse-game-line line)
         when (game-possible-p sets)
           sum game into task-1
-        finally (return (values task-1))))
+        sum (game-power sets) into task-2
+        finally (return (values task-1 task-2))))
