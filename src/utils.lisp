@@ -1,6 +1,6 @@
 (uiop:define-package #:aoc/utils
   (:use #:cl)
-  (:use-reexport #:alexandria #:serapeum #:split-sequence #:group-by)
+  (:mix-reexport #:alexandria #:serapeum #:split-sequence #:group-by #:str)
   (:export
    #:read-input
    #:read-input-fields
