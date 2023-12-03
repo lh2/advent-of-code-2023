@@ -4,8 +4,8 @@
 
 (define-test test-day-3
     ()
-  (assert= 4361
-           (aoc:run-day 3 "467..114..
+  (multiple-value-bind (task-1 task-2)
+      (aoc:run-day 3 "467..114..
 ...*......
 ..35..633.
 ......#...
@@ -14,4 +14,6 @@
 ..592.....
 ......755.
 ...$.*....
-.664.598..")))
+.664.598..")
+    (assert= 4361 task-1)
+    (assert= 467835 task-2)))
