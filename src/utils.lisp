@@ -7,7 +7,16 @@
    #:read-input-match
    #:char-number
    #:make-map
-   #:map-neighbours))
+   #:input-map
+   #:input-map-width
+   #:input-map-height
+   #:map-cell
+   #:map-integer-at
+   #:point+
+   #:point-x
+   #:point-y
+   #:point-neighbours
+   #:do-map-neighbours))
 (in-package #:aoc/utils)
 
 (defun normalize-type (type)
@@ -72,30 +81,82 @@
 (defun char-number (char)
   (- (char-int char) 48))
 
-(defun make-map (input &key (value #'identity) delimiter)
+(defstruct input-map
+  (data nil :type (simple-array simple-string))
+  (width 0 :type fixnum)
+  (height 0 :type fixnum))
+
+(defun make-map (input)
   (loop with width = nil
         with data = nil
         for row = (read-line input nil)
         for height from 0
-        while (and row (> (length row) 0))
-        do (let ((fields (mapcar value (if delimiter
-                                           (split-sequence delimiter row :test #'string=)
-                                           (coerce row 'list)))))
-             (unless width
-               (setf width (length row)))
-             (push fields data))
-        finally (return (make-array (list height width)
-                                    :initial-contents (nreverse data)))))
+        while row
+        when (= height 0)
+          do (setf width (length row))
+        do (push row data)
+        finally (return (make-input-map :data (coerce (nreverse data) 'vector)
+                                        :width width
+                                        :height height))))
 
-(defun map-neighbours (map cy cx)
-  (loop with height = (array-dimension map 0)
-        with width = (array-dimension map 1)
-        for y from (1- cy) to (1+ cy)
-        nconc (loop for x from (1- cx) to (1+ cx)
-                    when (and (not (and (= x cx)
-                                        (= y cy)))
-                              (>= x 0)
-                              (>= y 0)
-                              (< x width)
-                              (< y height))
-                      collect (aref map y x))))
+(declaim (inline point+ point-x point-y)
+         (ftype (function (cons) fixnum) point-x point-y))
+
+(defun point-x (point)
+  (car point))
+
+(defun point-y (point)
+  (cdr point))
+
+(defun point+ (point-a point-b)
+  (cons (the fixnum (+ (point-x point-a)
+                       (point-x point-b)))
+        (the fixnum (+ (point-y point-a)
+                       (point-y point-b)))))
+
+(declaim (inline map-cell map-integer-at)
+         (ftype (function (input-map cons) character) map-cell))
+
+(defun map-cell (map point)
+  (aref (aref (input-map-data map)
+              (point-y point))
+        (point-x point)))
+
+(defun map-integer-at (map point)
+  (parse-integer (aref (input-map-data map) (point-y point))
+                 :start (point-x point)
+                 :junk-allowed t))
+
+(defparameter *map-neighbours* (loop for y from -1 to 1
+                                     nconc (loop for x from -1 to 1
+                                                 when (not (and (= y 0)
+                                                                (= x 0)))
+                                                   collect (cons x y))))
+
+(defun point-neighbours (point)
+  (mapcar (curry #'point+ point)
+          *map-neighbours*))
+
+(defmacro do-map-neighbours ((neighbour-point map start-point) &body body)
+  (with-gensyms (width height lb? rb? tb? bb?)
+    (once-only ((sp start-point)
+                (mp map))
+      `(let* ((,width (input-map-width ,mp))
+              (,height (input-map-height ,mp))
+              (,lb? (> (point-x ,sp) 0))
+              (,rb? (< (point-x ,sp) (1- ,width)))
+              (,tb? (> (point-y ,sp) 0))
+              (,bb? (< (point-y ,sp) (1- ,height))))
+         ,@(loop for nb in *map-neighbours*
+                 collect `(let ((,neighbour-point (point+ ,sp ',nb)))
+                            (when (and ,@(let ((checks))
+                                           (when (< (point-x nb) 0)
+                                             (push lb? checks))
+                                           (when (< (point-y nb) 0)
+                                             (push tb? checks))
+                                           (when (> (point-x nb) 0)
+                                             (push rb? checks))
+                                           (when (> (point-y nb) 0)
+                                             (push bb? checks))
+                                           checks))
+                              ,@body)))))))

@@ -127,5 +127,5 @@
          (input (or (and #1=(second args)
                          (parse-namestring #1#))
                     (input-pathname today))))
-    (dolist (task (multiple-value-list (run-day today input)))
+    (dolist (task (multiple-value-list (time (run-day today input))))
       (format t "~A~%" task))))

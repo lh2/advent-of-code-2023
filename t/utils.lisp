@@ -56,16 +56,3 @@ x: 2, y: 5")
                    (read-input-match stream
                                      "(\\w+): (\\d+), (\\w+): (\\d+)"
                                      :types '(string integer string integer)))))
-
-
-(define-test test-make-map
-    ()
-  (with-input-from-string (stream "12345
-54321
-12345
-54321")
-    (assert-equalp #2A((1 2 3 4 5)
-                       (5 4 3 2 1)
-                       (1 2 3 4 5)
-                       (5 4 3 2 1))
-                   (make-map stream :value #'char-number))))
