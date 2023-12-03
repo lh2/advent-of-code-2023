@@ -6,7 +6,8 @@
    #:read-input-fields
    #:read-input-match
    #:char-number
-   #:make-map))
+   #:make-map
+   #:map-neighbours))
 (in-package #:aoc/utils)
 
 (defun normalize-type (type)
@@ -85,3 +86,16 @@
              (push fields data))
         finally (return (make-array (list height width)
                                     :initial-contents (nreverse data)))))
+
+(defun map-neighbours (map cy cx)
+  (loop with height = (array-dimension map 0)
+        with width = (array-dimension map 1)
+        for y from (1- cy) to (1+ cy)
+        nconc (loop for x from (1- cx) to (1+ cx)
+                    when (and (not (and (= x cx)
+                                        (= y cy)))
+                              (>= x 0)
+                              (>= y 0)
+                              (< x width)
+                              (< y height))
+                      collect (aref map y x))))
