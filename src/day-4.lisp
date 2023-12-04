@@ -24,16 +24,6 @@
                 (setf i end))))
         finally (return (list winning-numbers my-numbers))))
 
-(declaim (ftype (function (list list) fixnum) task-1))
-(defun task-1 (winning-numbers my-numbers)
-  (loop with score fixnum = 0
-        for number fixnum in my-numbers
-        when (member number winning-numbers)
-          do (setf score (if (= score 0)
-                             1
-                             (* score 2)))
-        finally (return score)))
-
 (declaim (ftype (function (list list) fixnum) card-matching-numbers))
 (defun card-matching-numbers (winning-numbers my-numbers)
   (loop for number fixnum in my-numbers
@@ -59,11 +49,12 @@
         while line
         for (winning-numbers my-numbers) = (read-card-numbers line)
         for matching-numbers = (card-matching-numbers winning-numbers my-numbers)
+        when (> matching-numbers 0)
+          sum (expt 2 (1- matching-numbers)) into task-1 fixnum
         do (multiple-value-bind (this-card-copies new-copies)
                (process-copies copies)
              (incf task-2 (1+ this-card-copies))
              (setf copies new-copies)
              (loop for copy from 0 to this-card-copies
                    do (push matching-numbers copies)))
-        sum (task-1 winning-numbers my-numbers) into task-1 fixnum
         finally (return (values task-1 task-2))))
