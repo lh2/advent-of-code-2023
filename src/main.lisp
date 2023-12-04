@@ -115,7 +115,7 @@
                       (:use #:cl #:lisp-unit2))
                    `(in-package ,package)
                    day))
-         (asdf:load-system "aoc-test/day-1")
+         (asdf:load-system (format nil "aoc-test/day-~A" day))
          (symbol-function
           (find-symbol (format nil "TEST-DAY-~A" day)
                        (find-package package))))))))
