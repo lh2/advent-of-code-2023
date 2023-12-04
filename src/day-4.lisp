@@ -7,7 +7,7 @@
   (loop with winning-numbers = nil
         with my-numbers = nil
         with divider? = nil
-        for i from 8 below (length line)
+        for i from (1+ (position #\: line)) below (length line)
         for char = (aref line i)
         do (cond
              ((char= char #\Space))
