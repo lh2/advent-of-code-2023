@@ -4,7 +4,7 @@
 
 (define-test test-day-5
     ()
-  (multiple-value-bind (task-1)
+  (multiple-value-bind (task-1 task-2)
       (aoc:run-day 5 "seeds: 79 14 55 13
 
 seed-to-soil map:
@@ -38,4 +38,5 @@ temperature-to-humidity map:
 humidity-to-location map:
 60 56 37
 56 93 4")
-    (assert= 35 task-1)))
+    (assert= 35 task-1)
+    (assert= 46 task-2)))

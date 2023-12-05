@@ -25,19 +25,29 @@
                       while (and line (string/= line ""))
                       collect (read-number-list line))))
 
+(declaim (ftype (function (fixnum list) fixnum) map-number))
 (defun map-number (number map)
-  (or (loop for (dest source length) in map
-            for diff = (- number source)
+  (or (loop for (dest source length) (fixnum fixnum fixnum) in map
+            for diff fixnum = (- number source)
             when (and (>= diff 0)
                       (< diff length))
-              do (return (+ dest diff)))
+              do (return (the fixnum (+ dest diff))))
       number))
 
+(defun map-seed (seed maps)
+  (loop with n = seed
+        for map in maps
+        do (setf n (map-number n map))
+        finally (return n)))
+
 (defun day-5 (input)
-  (loop with seeds = (parse-seeds input)
-        with maps = (parse-maps input)
-        for seed in seeds
-        minimize (loop with n = seed
-                       for map in maps
-                       do (setf n (map-number n map))
-                       finally (return n))))
+  (let ((seeds (parse-seeds input))
+        (maps (parse-maps input)))
+    (values
+     (loop for seed in seeds
+           minimize (map-seed seed maps) fixnum)
+     (loop for (seed-start seed-length) on seeds by #'cddr
+           minimize (loop for seed from seed-start
+                          repeat seed-length
+                          minimize (map-seed seed maps) fixnum) fixnum
+           do (format t "Seed range ~A ~A done!~%" seed-start seed-length)))))
