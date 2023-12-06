@@ -16,7 +16,8 @@
    #:point-x
    #:point-y
    #:point-neighbours
-   #:do-map-neighbours))
+   #:do-map-neighbours
+   #:read-number-list))
 (in-package #:aoc/utils)
 
 (defun normalize-type (type)
@@ -160,3 +161,12 @@
                                              (push bb? checks))
                                            checks))
                               ,@body)))))))
+
+(defun read-number-list (string &key (start 0))
+  (loop for i from start below (length string)
+        collect (multiple-value-bind (number end)
+                    (parse-integer string
+                                   :start i
+                                   :junk-allowed t)
+                  (setf i end)
+                  number)))

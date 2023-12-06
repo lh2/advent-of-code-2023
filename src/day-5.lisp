@@ -3,15 +3,6 @@
   (:export #:day-5))
 (in-package #:aoc/day-5)
 
-(defun read-number-list (string &key (start 0))
-  (loop for i from start below (length string)
-        collect (multiple-value-bind (number end)
-                    (parse-integer string
-                                   :start i
-                                   :junk-allowed t)
-                  (setf i end)
-                  number)))
-
 (defun parse-seeds (input)
   (let ((line (prog1
                   (read-line input)
