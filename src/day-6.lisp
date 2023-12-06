@@ -14,11 +14,8 @@
 (defun possible-ways-to-beat (time distance)
   (let ((start (loop for speed from 1 below time
                      when (beats-distance-p speed time distance)
-                       do (return speed)))
-        (end (loop for speed from (1- time) downto 1
-                   when (beats-distance-p speed time distance)
-                     do (return speed))))
-    (- end start -1)))
+                       do (return speed))))
+    (- time (* start 2) -1)))
 
 (defun join-numbers (numbers)
   (parse-integer (apply 'concatenate 'string
