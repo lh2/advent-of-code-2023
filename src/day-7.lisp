@@ -3,54 +3,76 @@
   (:export #:day-7))
 (in-package #:aoc/day-7)
 
-(defun parse-hand-bid (line)
+(defstruct hand-data
+  (hand "" :type simple-string)
+  (bid 0 :type fixnum)
+  (hand-strength -1 :type fixnum)
+  (cards-strength -1 :type fixnum))
+
+(declaim (ftype (function (simple-string) hand-data) parse-hand-data))
+(defun parse-hand-data (line)
   (let ((pos (position #\Space line)))
-    (list (coerce (subseq line 0 pos) 'list)
-          (parse-integer line :start (1+ pos)))))
+    (make-hand-data :hand (subseq line 0 pos)
+                    :bid (parse-integer line :start (1+ pos)))))
 
 (defun parse-input (input)
   (loop for line = (read-line input nil)
         while line
-        collect (parse-hand-bid line)))
+        collect (parse-hand-data line)))
 
-(defparameter *cards* (nconc (list #\A #\K #\Q #\J #\T)
-                             (loop for i from 9 downto 2 collect (code-char (+ i 48)))))
+(declaim (type (simple-array fixnum) *cards*))
+(defparameter *cards*
+  (make-array
+   35
+   :element-type 'fixnum
+   :initial-contents (loop for card from 50 to 84
+                           collect (or (case (code-char card)
+                                         (#\A 13) (#\K 12) (#\Q 11) (#\J 10) (#\T 9)
+                                         (#\9 8) (#\8 7) (#\7 6) (#\6 5) (#\5 4)
+                                         (#\4 3) (#\3 2) (#\2 1))
+                                       0))))
 
-(defparameter *cards-jokering* (nconc (list #\A #\K #\Q #\T)
-                                      (loop for i from 9 downto 2 collect (code-char (+ i 48)))
-                                      (list #\J)))
+(defparameter *cards-jokering*
+  (let ((copy (copy-seq *cards*)))
+    (setf (aref copy (- (char-code #\J) 50)) 0)
+    copy))
 
+(declaim (inline card-strength)
+         (ftype (function (character) fixnum) card-strength))
 (defun card-strength (card)
-  (abs (- (position card *cards*) 13)))
+  (aref *cards* (- (char-code card) 50)))
 
 (defparameter *with-jokering* nil)
 
 (defun hand-strength (hand)
-  (let* ((groups (group-by (if *with-jokering*
-                               (remove #\J hand)
-                               hand)
+  (let* ((groups (group-by (coerce (if *with-jokering*
+                                       (remove #\J hand)
+                                       hand)
+                                   'list)
                            :key #'identity
                            :value #'identity
                            :test #'char=))
          (groups (mapcar (lambda (group)
+                           (declare (type list group))
                            (1- (length group)))
                          groups))
-         (groups (sort groups #'>))
-         (n-jokers (when *with-jokering*
-                     (count #\J hand))))
+         (groups (sort groups #'>)))
     (when *with-jokering*
-      (when (= n-jokers 5)
-        (return-from hand-strength 70))
-      (setf groups
-            (loop for group in groups
-                  for missing = (- 5 group)
-                  for usable-jokers = (min missing n-jokers)
-                  when (> missing 0)
-                    do (incf group usable-jokers)
-                    and do (decf n-jokers usable-jokers)
-                  collect group)))
+      (let ((n-jokers (count #\J hand)))
+        (declare (type fixnum n-jokers))
+        (when (= n-jokers 5)
+          (return-from hand-strength 70))
+        (setf groups
+              (loop for group fixnum in groups
+                    for missing fixnum = (- 5 group)
+                    for usable-jokers = (min missing n-jokers)
+                    when (> missing 0)
+                      do (incf group usable-jokers)
+                      and do (decf n-jokers usable-jokers)
+                    collect group))))
     (let* ((n-pairs (count 2 groups))
            (highest-sequence (first groups)))
+      (declare (type fixnum n-pairs highest-sequence))
       (cond
         ((= highest-sequence 5) 70)
         ((= highest-sequence 4) 60)
@@ -60,31 +82,41 @@
         ((= highest-sequence 3) 40)
         ((= n-pairs 2) 30)
         ((= n-pairs 1) 20)
-        (t (card-strength (first hand)))))))
+        (t (card-strength (first-elt hand)))))))
 
-(defun calculate-strengths (hands)
-  (loop for (hand bid) in hands
-        collect (list (hand-strength hand)
-                      hand
-                      bid)))
+(declaim (ftype (function (simple-string) fixnum) card-strengths))
+(defun card-strengths (hand)
+  (loop with sum-card-strengths fixnum = 0
+        for card across hand
+        do (setf sum-card-strengths
+                 (+ (the fixnum (* sum-card-strengths 20))
+                    (card-strength card)))
+        finally (return sum-card-strengths)))
 
-(defun hand-strength< (hand-1 hand-2)
-  (let* ((strength-1 (car hand-1))
-         (strength-2 (car hand-2)))
+(defun calculate-strengths (hands-data)
+  (loop for hand-data of-type hand-data in hands-data
+        do (setf (hand-data-hand-strength hand-data)
+                 (hand-strength (hand-data-hand hand-data))
+
+                 (hand-data-cards-strength hand-data)
+                 (card-strengths (hand-data-hand hand-data)))))
+
+(defun hand-data< (hand-data-1 hand-data-2)
+  (let ((strength-1 (hand-data-hand-strength hand-data-1))
+        (strength-2 (hand-data-hand-strength hand-data-2)))
     (if (= strength-1 strength-2)
-        (loop for card-1 in (second hand-1)
-              for card-2 in (second hand-2)
-              while (char= card-1 card-2)
-              finally (return (< (card-strength card-1)
-                                 (card-strength card-2))))
+        (progn
+          (< (hand-data-cards-strength hand-data-1)
+             (hand-data-cards-strength hand-data-2)))
         (< strength-1 strength-2))))
 
-(defun total-winnings (hands-bids)
-  (let* ((strength-hands-bids (calculate-strengths hands-bids))
-         (strength-hands-bids (sort strength-hands-bids #'hand-strength<)))
-    (loop for (hand-strength hand bid) in strength-hands-bids
-          for rank from 1
-          sum (* bid rank))))
+(declaim (ftype (function (list) fixnum) total-winnings))
+(defun total-winnings (hands-data)
+  (calculate-strengths hands-data)
+  (let ((hands-data (sort hands-data #'hand-data<)))
+    (loop for hand-data of-type hand-data in hands-data
+          for rank fixnum from 1
+          sum (the fixnum (* (hand-data-bid hand-data) rank)) fixnum)))
 
 (defmacro with-jokering (() &body body)
   `(let ((*cards* *cards-jokering*)
@@ -92,7 +124,8 @@
      ,@body))
 
 (defun day-7 (input)
-  (let ((hands-bids (parse-input input)))
-    (values (total-winnings hands-bids)
+  (let* ((hands-data-task-1 (parse-input input))
+         (hands-data-task-2 (copy-seq hands-data-task-1)))
+    (values (total-winnings hands-data-task-1)
             (with-jokering ()
-              (total-winnings hands-bids)))))
+              (total-winnings hands-data-task-2)))))
