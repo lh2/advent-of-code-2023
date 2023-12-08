@@ -22,16 +22,28 @@
         do (setf (gethash key map) left-right)
         finally (return map)))
 
+(defun walk-to-destination (instructions map starting-point test-fun)
+  (loop with current = starting-point
+        for steps from 0
+        for direction = (aref instructions (mod steps (length instructions)))
+        for (left right) = (gethash current map)
+        do (setf current
+                 (ecase direction
+                   (#\L left)
+                   (#\R right)))
+        when (funcall test-fun current)
+          do (return (1+ steps))))
+
+(defun destination-p (field)
+  (char= (last-elt field) #\Z))
+
 (defun day-8 (input)
   (let ((instructions (read-line input))
         (map (read-map input)))
-    (loop with current = "AAA"
-          for steps from 0
-          for direction = (aref instructions (mod steps (length instructions)))
-          for (left right) = (gethash current map)
-          do (setf current
-                   (ecase direction
-                     (#\L left)
-                     (#\R right)))
-          when (equal current "ZZZ")
-            do (return (1+ steps)))))
+    (values (if (gethash "AAA" map)
+                (walk-to-destination instructions map "AAA" (curry #'equal "ZZZ"))
+                0)
+            (apply #'lcm
+                   (loop for field string being the hash-key of map
+                         when (char= (last-elt field) #\A)
+                           collect (walk-to-destination instructions map field #'destination-p))))))
