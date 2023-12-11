@@ -16,6 +16,7 @@
    #:point-x
    #:point-y
    #:point-neighbours
+   #:manhattan-distance
    #:do-map-neighbours
    #:read-number-list))
 (in-package #:aoc/utils)
@@ -137,6 +138,12 @@
 (defun point-neighbours (point)
   (mapcar (curry #'point+ point)
           *map-neighbours*))
+
+(defun manhattan-distance (from to)
+  (+ (abs (- (point-x to)
+             (point-x from)))
+     (abs (- (point-y to)
+             (point-y from)))))
 
 (defmacro do-map-neighbours ((neighbour-point map start-point) &body body)
   (with-gensyms (width height lb? rb? tb? bb?)
