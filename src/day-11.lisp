@@ -3,7 +3,8 @@
   (:export #:day-11))
 (in-package #:aoc/day-11)
 
-(defun find-galaxies (map)
+(defun find-galaxies (map &optional (expansion-factor 2))
+  (decf expansion-factor)
   (let (galaxies
         empty-rows
         empty-cols)
@@ -21,16 +22,24 @@
             do (push y empty-rows))
     (loop for galaxy in galaxies
           collect (cons (+ (point-x galaxy)
-                           (count-if (curry #'> (point-x galaxy)) empty-cols))
+                           (* (count-if (curry #'> (point-x galaxy)) empty-cols)
+                              expansion-factor))
                         (+ (point-y galaxy)
-                           (count-if (curry #'> (point-y galaxy)) empty-rows))))))
+                           (* (count-if (curry #'> (point-y galaxy)) empty-rows)
+                              expansion-factor))))))
 
 (defun day-11 (input)
   (let* ((map (make-map input))
-         (galaxies (find-galaxies map))
-         (sum 0))
+         (galaxies-1 (find-galaxies map))
+         (galaxies-2 (find-galaxies map 1000000))
+         (task-1 0)
+         (task-2 0))
     (map-combinations (lambda (p)
-                        (incf sum (apply #'manhattan-distance p)))
-                      galaxies
+                        (incf task-1 (apply #'manhattan-distance p)))
+                      galaxies-1
                       :length 2)
-    (values sum)))
+    (map-combinations (lambda (p)
+                        (incf task-2 (apply #'manhattan-distance p)))
+                      galaxies-2
+                      :length 2)
+    (values task-1 task-2)))
