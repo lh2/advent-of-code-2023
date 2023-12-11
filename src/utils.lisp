@@ -13,6 +13,7 @@
    #:map-cell
    #:map-integer-at
    #:point+
+   #:point-
    #:point-x
    #:point-y
    #:point-neighbours
@@ -101,7 +102,7 @@
                                         :width width
                                         :height height))))
 
-(declaim (inline point+ point-x point-y)
+(declaim (inline point+ point- point-x point-y)
          (ftype (function (cons) fixnum) point-x point-y))
 
 (defun point-x (point)
@@ -114,6 +115,12 @@
   (cons (the fixnum (+ (point-x point-a)
                        (point-x point-b)))
         (the fixnum (+ (point-y point-a)
+                       (point-y point-b)))))
+
+(defun point- (point-a point-b)
+  (cons (the fixnum (- (point-x point-a)
+                       (point-x point-b)))
+        (the fixnum (- (point-y point-a)
                        (point-y point-b)))))
 
 (declaim (inline map-cell map-integer-at)
