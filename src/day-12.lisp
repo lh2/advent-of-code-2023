@@ -11,42 +11,44 @@
          (groups (read-number-list line :start (1+ space-pos))))
     (values springs groups)))
 
-(defparameter *cache* (make-hash-table :test 'equal))
-
 (defun possible-arrangements (springs groups)
-  (labels ((next (springs groups current-group-length)
-             (when (null springs)
-               (when (if groups
-                         (and (= (length groups) 1)
-                              (= (car groups) current-group-length))
-                         (= current-group-length 0))
-                 (return-from next 1))
-               (return-from next 0))
-             (let ((current (car springs))
-                   (not-in-group (= current-group-length 0))
-                   (group-filled? (and groups
-                                       (= (car groups) current-group-length)))
-                   (count 0))
-               (when group-filled?
-                 (pop groups))
-               (cond
-                 ((char= current #\.)
-                  (when (or not-in-group group-filled?)
-                    (incf count (next-cache (cdr springs) groups 0))))
-                 ((char= current #\#)
-                  (unless group-filled?
-                    (incf count (next-cache (cdr springs) groups (1+ current-group-length)))))
-                 ((char= current #\?)
-                  (when (or not-in-group group-filled?)
-                    (incf count (next-cache (cdr springs) groups 0)))
-                  (unless group-filled?
-                    (incf count (next-cache (cdr springs) groups (1+ current-group-length))))))
-               count))
-           (next-cache (&rest args)
-             (or (gethash args *cache*)
-                 (setf (gethash args *cache*)
-                       (apply #'next args)))))
-    (next-cache springs groups 0)))
+  (let ((cache (make-hash-table)))
+    (labels ((next (springs groups current-group-length)
+               (when (null springs)
+                 (when (if groups
+                           (and (= (length groups) 1)
+                                (= (car groups) current-group-length))
+                           (= current-group-length 0))
+                   (return-from next 1))
+                 (return-from next 0))
+               (let ((current (car springs))
+                     (not-in-group (= current-group-length 0))
+                     (group-filled? (and groups
+                                         (= (car groups) current-group-length)))
+                     (count 0))
+                 (when group-filled?
+                   (pop groups))
+                 (cond
+                   ((char= current #\.)
+                    (when (or not-in-group group-filled?)
+                      (incf count (next-cache (cdr springs) groups 0))))
+                   ((char= current #\#)
+                    (unless group-filled?
+                      (incf count (next-cache (cdr springs) groups (1+ current-group-length)))))
+                   ((char= current #\?)
+                    (when (or not-in-group group-filled?)
+                      (incf count (next-cache (cdr springs) groups 0)))
+                    (unless group-filled?
+                      (incf count (next-cache (cdr springs) groups (1+ current-group-length))))))
+                 count))
+             (next-cache (springs groups current-group-length)
+               (let ((key (logior (ash (length springs) 16)
+                                  (ash (length groups) 8)
+                                  current-group-length)))
+                 (or (gethash key cache)
+                     (setf (gethash key cache)
+                           (next springs groups current-group-length))))))
+      (next-cache springs groups 0))))
 
 (defun day-12 (input)
   (loop with task-1 = 0
