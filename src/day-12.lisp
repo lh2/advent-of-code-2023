@@ -11,42 +11,52 @@
          (groups (read-number-list line :start (1+ space-pos))))
     (values springs groups)))
 
+(defparameter *cache* (make-hash-table :test 'equal))
+
 (defun possible-arrangements (springs groups)
-  (let ((count 0)
-        (length (length springs)))
-    (labels ((next (springs pos groups &optional (current-group-length 0))
-               (when (>= pos length)
-                 (when (if groups
-                           (and (= (length groups) 1)
-                                (= (car groups) current-group-length))
-                           (= current-group-length 0))
-                   (incf count))
-                 (return-from next))
-               (let ((current (aref springs pos))
-                     (next-pos (1+ pos))
-                     (not-in-group (= current-group-length 0))
-                     (group-filled? (and groups
-                                         (= (car groups) current-group-length))))
-                 (when group-filled?
-                   (pop groups))
-                 (cond
-                   ((char= current #\.)
-                    (when (or not-in-group group-filled?)
-                      (next springs next-pos groups 0)))
-                   ((char= current #\#)
-                    (unless group-filled?
-                      (next springs next-pos groups (1+ current-group-length))))
-                   ((char= current #\?)
-                    (when (or not-in-group group-filled?)
-                      (next springs next-pos groups 0))
-                    (unless group-filled?
-                      (next springs next-pos groups (1+ current-group-length))))))))
-      (next springs 0 groups))
-    count))
+  (labels ((next (springs groups current-group-length)
+             (when (null springs)
+               (when (if groups
+                         (and (= (length groups) 1)
+                              (= (car groups) current-group-length))
+                         (= current-group-length 0))
+                 (return-from next 1))
+               (return-from next 0))
+             (let ((current (car springs))
+                   (not-in-group (= current-group-length 0))
+                   (group-filled? (and groups
+                                       (= (car groups) current-group-length)))
+                   (count 0))
+               (when group-filled?
+                 (pop groups))
+               (cond
+                 ((char= current #\.)
+                  (when (or not-in-group group-filled?)
+                    (incf count (next-cache (cdr springs) groups 0))))
+                 ((char= current #\#)
+                  (unless group-filled?
+                    (incf count (next-cache (cdr springs) groups (1+ current-group-length)))))
+                 ((char= current #\?)
+                  (when (or not-in-group group-filled?)
+                    (incf count (next-cache (cdr springs) groups 0)))
+                  (unless group-filled?
+                    (incf count (next-cache (cdr springs) groups (1+ current-group-length))))))
+               count))
+           (next-cache (&rest args)
+             (or (gethash args *cache*)
+                 (setf (gethash args *cache*)
+                       (apply #'next args)))))
+    (next-cache springs groups 0)))
 
 (defun day-12 (input)
-  (loop for line = (read-line input nil)
+  (loop with task-1 = 0
+        with task-2 = 0
+        for line = (read-line input nil)
         while line
-        sum (multiple-value-bind (springs groups)
-                (parse-line line)
-              (possible-arrangements springs groups))))
+        do (multiple-value-bind (springs groups)
+               (parse-line line)
+             (incf task-1 (possible-arrangements (coerce springs 'list) groups))
+             (incf task-2 (possible-arrangements (coerce (string-join (loop repeat 5 collect springs) #\?)
+                                                         'list)
+                                                 (loop repeat 5 append groups))))
+        finally (return (values task-1 task-2))))
