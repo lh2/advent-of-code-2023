@@ -16,24 +16,29 @@
              (lambda (primary secondary)
                (cons secondary primary))))))
 
+(defun find-reflection-imperfections (map reflection-point primary-axis-length secondary-axis-length make-point)
+  (loop with reflection-length = (min (1+ reflection-point)
+                                      (- primary-axis-length reflection-point 1))
+        repeat reflection-length
+        for compare-1 downfrom reflection-point
+        for compare-2 from (1+ reflection-point)
+        for reflection-matches = (loop for secondary-axis-point from 0 below secondary-axis-length
+                                       for point-1 = (funcall make-point compare-1 secondary-axis-point)
+                                       for point-2 = (funcall make-point compare-2 secondary-axis-point)
+                                       when (char= (map-cell map point-1)
+                                                   (map-cell map point-2))
+                                         sum 1)
+        sum (- secondary-axis-length reflection-matches)))
+
 (defun find-point-of-reflection (map type)
   (multiple-value-bind (primary-axis-length secondary-axis-length make-point)
       (reflection-finding-properties map type)
     (loop with perfect-point-of-reflection = nil
           with imperfect-point-of-reflection = nil
           for reflection-point from 0 below (1- primary-axis-length)
-          for reflection-length = (min (1+ reflection-point)
-                                       (- primary-axis-length reflection-point 1))
-          for reflection-imperfections = (loop repeat reflection-length
-                                               for compare-1 downfrom reflection-point
-                                               for compare-2 from (1+ reflection-point)
-                                               for reflection-matches = (loop for secondary-axis-point from 0 below secondary-axis-length
-                                                                              for point-1 = (funcall make-point compare-1 secondary-axis-point)
-                                                                              for point-2 = (funcall make-point compare-2 secondary-axis-point)
-                                                                              when (char= (map-cell map point-1)
-                                                                                          (map-cell map point-2))
-                                                                                sum 1)
-                                               sum (- secondary-axis-length reflection-matches))
+          for reflection-imperfections = (find-reflection-imperfections map reflection-point
+                                                                        primary-axis-length secondary-axis-length
+                                                                        make-point)
           when (= reflection-imperfections 0)
             do (setf perfect-point-of-reflection (1+ reflection-point))
           when (= reflection-imperfections 1)
