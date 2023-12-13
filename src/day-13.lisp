@@ -19,21 +19,34 @@
 (defun find-point-of-reflection (map type)
   (multiple-value-bind (primary-axis-length secondary-axis-length make-point)
       (reflection-finding-properties map type)
-    (loop for reflection-point from 0 below (1- primary-axis-length)
+    (loop with perfect-point-of-reflection = nil
+          with imperfect-point-of-reflection = nil
+          for reflection-point from 0 below (1- primary-axis-length)
           for reflection-length = (min (1+ reflection-point)
                                        (- primary-axis-length reflection-point 1))
-          when (loop repeat reflection-length
-                     for compare-1 downfrom reflection-point
-                     for compare-2 from (1+ reflection-point)
-                     always (loop for secondary-axis-point from 0 below secondary-axis-length
-                                  for point-1 = (funcall make-point compare-1 secondary-axis-point)
-                                  for point-2 = (funcall make-point compare-2 secondary-axis-point)
-                                  always (char= (map-cell map point-1)
-                                                (map-cell map point-2))))
-            do (return (1+ reflection-point)))))
+          for reflection-imperfections = (loop repeat reflection-length
+                                               for compare-1 downfrom reflection-point
+                                               for compare-2 from (1+ reflection-point)
+                                               for reflection-matches = (loop for secondary-axis-point from 0 below secondary-axis-length
+                                                                              for point-1 = (funcall make-point compare-1 secondary-axis-point)
+                                                                              for point-2 = (funcall make-point compare-2 secondary-axis-point)
+                                                                              when (char= (map-cell map point-1)
+                                                                                          (map-cell map point-2))
+                                                                                sum 1)
+                                               sum (- secondary-axis-length reflection-matches))
+          when (= reflection-imperfections 0)
+            do (setf perfect-point-of-reflection (1+ reflection-point))
+          when (= reflection-imperfections 1)
+            do (setf imperfect-point-of-reflection (1+ reflection-point))
+          finally (return (list perfect-point-of-reflection imperfect-point-of-reflection)))))
 
 (defun day-13 (input)
   (loop for map = (make-map input)
         while map
-        sum (or (find-point-of-reflection map :vertical)
-                (* (find-point-of-reflection map :horizontal) 100))))
+        for (perfect-vertical-reflection imperfect-vertical-reflection) = (find-point-of-reflection map :vertical)
+        for (perfect-horizontal-reflection imperfect-horizontal-reflection) = (find-point-of-reflection map :horizontal)
+        sum (or perfect-vertical-reflection
+                (* perfect-horizontal-reflection 100)) into task-1
+        sum (or imperfect-vertical-reflection
+                (* imperfect-horizontal-reflection 100)) into task-2
+        finally (return (values task-1 task-2))))
