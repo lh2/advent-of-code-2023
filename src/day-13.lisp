@@ -46,6 +46,7 @@
             do (setf perfect-point-of-reflection (1+ reflection-point))
           when (= reflection-imperfections 1)
             do (setf imperfect-point-of-reflection (1+ reflection-point))
+          until (and perfect-point-of-reflection imperfect-point-of-reflection)
           finally (return (list perfect-point-of-reflection imperfect-point-of-reflection)))))
 
 (defun day-13 (input)
