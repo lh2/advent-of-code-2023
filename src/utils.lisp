@@ -7,6 +7,7 @@
    #:read-input-match
    #:char-number
    #:make-map
+   #:print-map
    #:input-map
    #:input-map-width
    #:input-map-height
@@ -94,13 +95,18 @@
         with data = nil
         for row = (read-line input nil)
         for height from 0
-        while row
+        while (and row (> (length row) 0))
         when (= height 0)
           do (setf width (length row))
         do (push row data)
-        finally (return (make-input-map :data (coerce (nreverse data) 'vector)
-                                        :width width
-                                        :height height))))
+        finally (return (and data
+                             (make-input-map :data (coerce (nreverse data) 'vector)
+                                             :width width
+                                             :height height)))))
+
+(defun print-map (map &key (stream *standard-output*))
+  (loop for y from 0 below (input-map-height map)
+        do (format stream "~A~%" (aref (input-map-data map) y))))
 
 (declaim (inline point+ point- point-x point-y)
          (ftype (function (cons) fixnum) point-x point-y))
