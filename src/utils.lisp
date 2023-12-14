@@ -129,13 +129,19 @@
         (the fixnum (- (point-y point-a)
                        (point-y point-b)))))
 
-(declaim (inline map-cell map-integer-at)
-         (ftype (function (input-map cons) character) map-cell))
+(declaim (inline map-cell map-integer-at (setf map-cell))
+         (ftype (function (input-map cons) character) map-cell)
+         (ftype (function (character input-map cons) character) (setf map-cell)))
 
 (defun map-cell (map point)
   (aref (aref (input-map-data map)
               (point-y point))
         (point-x point)))
+
+(defun (setf map-cell) (new map point)
+  (let ((row (aref (input-map-data map)
+                   (point-y point))))
+    (setf (aref row (point-x point)) new)))
 
 (defun map-integer-at (map point)
   (parse-integer (aref (input-map-data map) (point-y point))
