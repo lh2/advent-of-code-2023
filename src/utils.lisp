@@ -20,7 +20,8 @@
    #:point-neighbours
    #:manhattan-distance
    #:do-map-neighbours
-   #:read-number-list))
+   #:read-number-list
+   #:find-pattern))
 (in-package #:aoc/utils)
 
 (defun normalize-type (type)
@@ -196,3 +197,11 @@
                                    :junk-allowed t)
                   (setf i end)
                   number)))
+
+(defun find-pattern (list &optional (minimum-length 5))
+  (loop for length from minimum-length to (floor (/ (length list) 2))
+        when (loop for i below length
+                   for c-1 = (elt list i)
+                   for c-2 = (elt list (+ i length))
+                   always (= c-1 c-2))
+          do (return-from find-pattern length)))

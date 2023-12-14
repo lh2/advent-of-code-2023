@@ -1,6 +1,8 @@
 (defpackage #:aoc/day-14
   (:use #:cl #:aoc/utils)
-  (:export #:day-14))
+  (:export
+   #:day-14
+   #:*minimum-pattern-length*))
 (in-package #:aoc/day-14)
 
 (defun point-x-constructor (y)
@@ -90,7 +92,28 @@
                   when (char= (map-cell map (cons x y)) #\O)
                     sum load-multiplier)))
 
+(defun spin-cycle (map &optional (cycle '(:north :west :south :east)))
+  (loop for direction in cycle
+        do (slide-rocks map direction)))
+
+(defparameter *minimum-pattern-length* 100)
+
 (defun day-14 (input)
-  (let ((map (make-map input)))
+  (let ((map (make-map input))
+        task-1 task-2)
     (slide-rocks map :north)
-    (total-load map)))
+    (setf task-1 (total-load map))
+    (spin-cycle map '(:west :south :east))
+    (loop with history = nil
+          for cycles from 1
+          do (spin-cycle map)
+          do (push (total-load map) history)
+          do (let ((pattern-length (find-pattern history *minimum-pattern-length*)))
+               (when pattern-length
+                 (setf task-2
+                       (elt history
+                            (1+ (- pattern-length
+                                   (- (mod 1000000000 pattern-length)
+                                      (- cycles (* pattern-length 2)))))))
+                 (return))))
+    (values task-1 task-2)))

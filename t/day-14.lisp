@@ -4,8 +4,9 @@
 
 (define-test test-day-14
     ()
-  (multiple-value-bind (task-1)
-      (aoc:run-day 14 "O....#....
+  (let ((aoc/day-14:*minimum-pattern-length* 5))
+    (multiple-value-bind (task-1 task-2)
+        (aoc:run-day 14 "O....#....
 O.OO#....#
 .....##...
 OO.#O....O
@@ -15,4 +16,5 @@ O.#..O.#.#
 .......O..
 #....###..
 #OO..#....")
-    (assert= 136 task-1)))
+      (assert= 136 task-1)
+      (assert= 64 task-2))))
