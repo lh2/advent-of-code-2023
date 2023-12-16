@@ -35,10 +35,10 @@
     (:up (point+ pos (cons 0 -1)))
     (:left (point+ pos (cons -1 0)))))
 
-(defun shoot-beam (map)
+(defun shoot-beam (map start-pos start-dir)
   (loop with energizing-map = (make-hash-table :test 'equal)
         with passing-map = (make-hash-table :test 'equal)
-        with todo = (list (list (cons 0 0) :right))
+        with todo = (list (list start-pos start-dir))
         with width = (input-map-width map)
         with height = (input-map-height map)
         for (pos direction) = (pop todo)
@@ -60,5 +60,15 @@
         finally (return (hash-table-count energizing-map))))
 
 (defun day-16 (input)
-  (let ((map (make-map input)))
-    (shoot-beam map)))
+  (let* ((map (make-map input))
+         (task-1 (shoot-beam map (cons 0 0) :right))
+         (width (input-map-width map))
+         (height (input-map-height map)))
+    (values task-1
+            (max
+             (loop for (row dir) in `((0 :down) (,(1- height) :up))
+                   maximize (loop for x from 0 below width
+                                  maximize (shoot-beam map (cons x row) dir)))
+             (loop for (col dir) in `((0 :right) (,(1- width) :left))
+                   maximize (loop for y from 0 below height
+                                  maximize (shoot-beam map (cons col y) dir)))))))
