@@ -1,6 +1,9 @@
 (uiop:define-package #:aoc/utils
   (:use #:cl)
-  (:mix-reexport #:alexandria #:serapeum #:split-sequence #:group-by #:str)
+  (:mix-reexport #:alexandria #:serapeum #:split-sequence
+                 #:group-by #:str #:queues)
+  (:import-from #:queues.simple-queue)
+  (:import-from #:queues.priority-queue)
   (:export
    #:read-input
    #:read-input-fields
