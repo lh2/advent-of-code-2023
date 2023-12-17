@@ -4,7 +4,7 @@
 
 (define-test test-day-17
     ()
-  (multiple-value-bind (task-1)
+  (multiple-value-bind (task-1 task-2)
       (aoc:run-day 17 "2413432311323
 3215453535623
 3255245654254
@@ -18,4 +18,5 @@
 1224686865563
 2546548887735
 4322674655533")
-    (assert= 102 task-1)))
+    (assert= 102 task-1)
+    (assert= 94 task-2)))
