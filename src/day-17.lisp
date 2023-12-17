@@ -77,9 +77,7 @@
                  do (cond
                       ((and existing-value
                             (< next-heat-cost (fourth existing-value)))
-                       (setf (nth 3 existing-value) next-heat-cost
-                             (nth 2 existing-value) steps
-                             (nth 1 existing-value) next-dir))
+                       (setf (fourth existing-value) next-heat-cost))
                       ((null existing-value)
                        (qpush todo (list next next-dir steps next-heat-cost)))))))
 
