@@ -4,61 +4,63 @@
 (in-package #:aoc/day-18)
 
 (defun parse-line (line)
-  (multiple-value-bind (dig-length)
+  (multiple-value-bind (dig-length end)
       (parse-integer line :start 2 :junk-allowed t)
     (list (switch ((aref line 0))
             (#\U :up)
             (#\L :left)
             (#\R :right)
             (#\D :down))
-          dig-length)))
+          dig-length
+          (switch ((aref line (+ end 3 5)))
+            (#\0 :right)
+            (#\1 :down)
+            (#\2 :left)
+            (#\3 :up))
+          (parse-integer line
+                         :start (+ end 3)
+                         :end (+ end 3 5)
+                         :radix 16))))
 
-(defun dir-diff (dir)
+(defun dir-diff (dir length)
   (ecase dir
-    (:up '(0 . -1))
-    (:left '(-1 . 0))
-    (:right '(1 . 0))
-    (:down '(0 . 1))))
+    (:up (cons 0 (- length)))
+    (:left (cons (- length) 0))
+    (:right (cons length 0))
+    (:down (cons 0 length))))
 
-(defun fill-lagoon (map start-pos)
-  (loop with todo = (list start-pos)
-        while todo
-        for current = (pop todo)
-        do (setf (gethash current map) t)
-        do (loop for n in '(:up :left :right :down)
-                 for n-pos = (point+ current (dir-diff n))
-                 unless (gethash n-pos map)
-                   do (push n-pos todo))))
+(declaim (ftype (function ((simple-array cons)) fixnum) shoelace))
+(defun shoelace (vertices)
+  (loop with n = (- (length vertices) 2)
+        repeat n
+        for i from 0
+        for j = (1+ i)
+        for x-1 fixnum = (car (aref vertices i))
+        for y-1 fixnum = (cdr (aref vertices i))
+        for x-2 fixnum = (car (aref vertices j))
+        for y-2 fixnum = (cdr (aref vertices j))
+        sum (the fixnum (* x-1 y-2)) into sum-1 fixnum
+        sum (the fixnum (* x-2 y-1)) into sum-2 fixnum
+        finally (return (/ (the fixnum (abs (- sum-1 sum-2))) 2))))
 
-(defun find-start-pos (map min-x min-y)
-  (loop for x from min-x
-        for y from min-y
-        for pos = (cons x y)
-        when (gethash pos map)
-          do (return (point+ pos (cons 1 1)))))
-
-(defun lagoon-size (map)
-  (multiple-value-bind (min-x min-y)
-      (loop for key being the hash-keys of map
-            for (x . y) = key
-            minimize x into min-x
-            minimize y into min-y
-            maximize x into max-x
-            maximize y into max-y
-            finally (return (values min-x min-y max-x max-y)))
-    (let ((start-pos (find-start-pos map min-x min-y)))
-      (fill-lagoon map start-pos)
-      (hash-table-count map))))
 
 (defun day-18 (input)
-  (loop with map = (let ((ht (make-hash-table :test 'equal)))
-                     (setf (gethash (cons 0 0) ht) t)
-                     ht)
-        with current = (cons 0 0)
+  (loop with vertices-1 = (list (cons 0 0))
+        with vertices-2 = (list (cons 0 0))
+        with current-1 = (cons 0 0)
+        with current-2 = (cons 0 0)
         for line = (read-line input nil)
         while line
-        for (dir length) = (parse-line line)
-        do (loop for i from 0 below length
-                 do (setf current (point+ current (dir-diff dir)))
-                 do (setf (gethash current map) t))
-        finally (return (lagoon-size map))))
+        for (dir-1 length-1 dir-2 length-2) = (parse-line line)
+        sum length-1 into length-1-sum
+        sum length-2 into length-2-sum
+        do (setf current-1 (point+ current-1 (dir-diff dir-1 length-1)))
+        do (setf current-2 (point+ current-2 (dir-diff dir-2 length-2)))
+        do (push current-1 vertices-1)
+        do (push current-2 vertices-2)
+        finally (return (values (+ (shoelace (coerce (nreverse vertices-1) 'vector))
+                                   (/ length-1-sum 2)
+                                   1)
+                                (+ (shoelace (coerce (nreverse vertices-2) 'vector))
+                                   (/ length-2-sum 2)
+                                   1)))))
