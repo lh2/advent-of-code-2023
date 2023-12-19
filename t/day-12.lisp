@@ -4,5 +4,5 @@
 
 (define-test test-day-12
     ()
-  (assert= 1 (possible-arrangements "???.###" (list 1 1 3)))
-  (assert= 10 (possible-arrangements "?###????????" (list 3 2 1))))
+  (assert= 1 (possible-arrangements (coerce "???.###" 'list) (list 1 1 3)))
+  (assert= 10 (possible-arrangements (coerce "?###????????" 'list) (list 3 2 1))))
