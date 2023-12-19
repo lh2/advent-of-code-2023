@@ -60,6 +60,6 @@
                              box-content)
                            (nconc box-content
                                   (list parsed-element))))))
-        sum (claculate-hash element) into task-1
+        sum (calculate-hash element) into task-1
         finally (return (values task-1
                                 (total-focusing-power boxes)))))
