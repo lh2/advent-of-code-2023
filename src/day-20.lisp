@@ -95,17 +95,31 @@
     modules))
 
 (defun day-20 (input)
-  (let* ((modules (parse-input input))
-         (broadcast (gethash "broadcaster" modules)))
-    (loop with low-count = 0
-          with high-count = 0
-          repeat 1000
-          do (loop with next = (list (list nil broadcast :low))
-                   while next
-                   for next-next = (loop for (from to type) in next
-                                         do (ecase type
-                                              (:low (incf low-count))
-                                              (:high (incf high-count)))
-                                         nconc (pulse to from type))
-                   do (setf next next-next))
-          finally (return (* low-count high-count)))))
+  (loop with modules = (parse-input input)
+        with broadcast = (gethash "broadcaster" modules)
+        with rx-source-modules = (when-let (rx (gethash "rx" modules))
+                                   (module-connected (first (module-connected rx))))
+        with rx-source-intervals = (make-hash-table)
+        with task-1 = 0
+        with task-2 = 0
+        with low-count = 0
+        with high-count = 0
+        for i from 1
+        do (loop with next = (list (list nil broadcast :low))
+                 while next
+                 for n = (loop for (from to type) in next
+                               do (ecase type
+                                    (:low (incf low-count))
+                                    (:high (progn
+                                             (when (and (member from rx-source-modules)
+                                                        (not (gethash from rx-source-intervals)))
+                                               (setf (gethash from rx-source-intervals) i))
+                                             (incf high-count))))
+                               nconc (pulse to from type))
+                 do (setf next n))
+        when (= i 1000)
+          do (setf task-1 (* low-count high-count))
+        when (= (hash-table-count rx-source-intervals) (length rx-source-modules))
+          do (setf task-2 (apply #'lcm (hash-table-values rx-source-intervals)))
+        when (if rx-source-modules (> task-2 0) (> task-1 0))
+          do (return (values task-1 task-2))))
