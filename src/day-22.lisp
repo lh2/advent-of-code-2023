@@ -4,17 +4,15 @@
 (in-package #:aoc/day-22)
 
 (defclass sand-block ()
-  ((id
-    :initarg :id)
-   (p-1
+  ((p-1
     :initarg :p-1
     :reader sand-block-p-1)
    (p-2
     :initarg :p-2
     :reader sand-block-p-2)))
 
-(defun make-sand-block (id p-1 p-2)
-  (make-instance 'sand-block :id id :p-1 p-1 :p-2 p-2))
+(defun make-sand-block (p-1 p-2)
+  (make-instance 'sand-block :p-1 p-1 :p-2 p-2))
 
 (defmethod print-object ((block sand-block) stream)
   (print-unreadable-object (block stream :type t)
@@ -22,27 +20,29 @@
         block
       (format stream "~A: ~A ~A" id p-1 p-2))))
 
-(defmethod sand-block-bottom-z ((block sand-block))
-  (with-slots (p-1)
-      block
-    (third p-1)))
+(declaim (ftype (function (sand-block) fixnum)
+                sand-block-bottom-z
+                sand-block-top-z)
+         (ftype (function (fixnum sand-block) fixnum)
+                (setf sand-block-bottom-z)
+                (setf sand-block-top-z))
+         (inline sand-block-bottom-z sand-block-top-z
+                 (setf sand-block-bottom-z) (setf sand-block-top-z)))
 
-(defmethod (setf sand-block-bottom-z) (new-z (block sand-block))
-  (with-slots (p-1)
-      block
-    (setf (third p-1) new-z)))
+(defun sand-block-bottom-z (block)
+  (third (sand-block-p-1 block)))
 
-(defmethod sand-block-top-z ((block sand-block))
-  (with-slots (p-2)
-      block
-    (third p-2)))
+(defun (setf sand-block-bottom-z) (new-z block)
+  (setf (third (sand-block-p-1 block)) new-z))
 
-(defmethod (setf sand-block-top-z) (new-z (block sand-block))
-  (with-slots (p-2)
-      block
-    (setf (third p-2) new-z)))
+(defun sand-block-top-z (block)
+  (third (sand-block-p-2 block)))
 
-(defun parse-line (line index)
+(defun (setf sand-block-top-z) (new-z block)
+  (setf (third (sand-block-p-2 block)) new-z))
+
+(declaim (ftype (function (simple-string) sand-block) parse-line))
+(defun parse-line (line)
   (loop with p-1 = (list 0 0 0)
         with p-2 = (list 0 0 0)
         for current-index in (list 0 1 2
@@ -54,16 +54,16 @@
                (parse-integer line :start pos :junk-allowed t)
              (setf (nth current-index obj) n)
              (setf pos end))
-        finally (return (make-sand-block (code-char (+ index 65)) p-1 p-2))))
+        finally (return (make-sand-block p-1 p-2))))
 
 (defun parse-input (input)
   (loop for line = (read-line input nil)
-        for i from 0
         while line
-        collect (parse-line line i)))
+        collect (parse-line line)))
 
 (defun collides-p (block-1 block-2)
   (labels ((intersects-p (from-1 to-1 from-2 to-2)
+             (declare (type fixnum from-1 to-1 from-2 to-2))
              (and (<= from-1 to-2)
                   (<= from-2 to-1))))
     (let ((b1-p1 (sand-block-p-1 block-1))
